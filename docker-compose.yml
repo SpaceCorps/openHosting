@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  openhosting:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - openhosting-data:/app/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - GITHUB_WEBHOOK_SECRET=your-webhook-secret-here
+    restart: unless-stopped
+    networks:
+      - openhosting-network
+
+  # Optional: Add a reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - openhosting
+    restart: unless-stopped
+    networks:
+      - openhosting-network
+
+volumes:
+  openhosting-data:
+
+networks:
+  openhosting-network:
+    driver: bridge
