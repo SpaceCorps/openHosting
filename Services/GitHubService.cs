@@ -17,7 +17,7 @@ public class GitHubService
         Directory.CreateDirectory(_tempDirectory);
     }
 
-    public async Task<string> CloneRepositoryAsync(string repositoryUrl, string branch = "main")
+    public Task<string> CloneRepositoryAsync(string repositoryUrl, string branch = "main")
     {
         try
         {
@@ -35,7 +35,7 @@ public class GitHubService
             _logger.LogWarning("Git cloning not fully implemented - using placeholder");
             
             _logger.LogInformation("Successfully cloned repository to {LocalPath}", localPath);
-            return localPath;
+            return Task.FromResult(localPath);
         }
         catch (Exception ex)
         {
@@ -82,7 +82,7 @@ public class GitHubService
         }
     }
 
-    public async Task<GitHubWebhook?> ParseWebhookAsync(string payload)
+    public Task<GitHubWebhook?> ParseWebhookAsync(string payload)
     {
         try
         {
@@ -92,12 +92,12 @@ public class GitHubService
             });
 
             _logger.LogInformation("Parsed webhook for repository {Repository}", webhook?.Repository?.FullName);
-            return webhook;
+            return Task.FromResult(webhook);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to parse GitHub webhook payload");
-            return null;
+            return Task.FromResult<GitHubWebhook?>(null);
         }
     }
 
@@ -106,23 +106,23 @@ public class GitHubService
         return webhook.Ref == "refs/heads/main" || webhook.Ref == "refs/heads/master";
     }
 
-    public async Task<string> GetLatestCommitAsync(string repositoryPath)
+    public Task<string> GetLatestCommitAsync(string repositoryPath)
     {
         try
         {
             // TODO: Implement actual git commit retrieval
             // This is a placeholder - you would use LibGit2Sharp or git command here
             _logger.LogWarning("Git commit retrieval not fully implemented - using placeholder");
-            return "placeholder-commit-hash";
+            return Task.FromResult("placeholder-commit-hash");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get latest commit from {RepositoryPath}", repositoryPath);
-            return string.Empty;
+            return Task.FromResult(string.Empty);
         }
     }
 
-    public async Task<bool> VerifyWebhookSignature(string payload, string signature, string secret)
+    public Task<bool> VerifyWebhookSignature(string payload, string signature, string secret)
     {
         try
         {
@@ -130,12 +130,12 @@ public class GitHubService
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
             var computedSignature = "sha256=" + Convert.ToHexString(computedHash).ToLower();
 
-            return computedSignature == signature;
+            return Task.FromResult(computedSignature == signature);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to verify webhook signature");
-            return false;
+            return Task.FromResult(false);
         }
     }
 

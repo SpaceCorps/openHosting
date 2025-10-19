@@ -165,14 +165,14 @@ public class ContainerService
         return await _dockerService.GetContainerLogsAsync(containerId, tail);
     }
 
-    public async Task<List<Deployment>> GetDeploymentsAsync()
+    public Task<List<Deployment>> GetDeploymentsAsync()
     {
-        return _deployments.ToList();
+        return Task.FromResult(_deployments.ToList());
     }
 
-    public async Task<Deployment?> GetDeploymentAsync(string deploymentId)
+    public Task<Deployment?> GetDeploymentAsync(string deploymentId)
     {
-        return _deployments.FirstOrDefault(d => d.Id == deploymentId);
+        return Task.FromResult(_deployments.FirstOrDefault(d => d.Id == deploymentId));
     }
 
     public async Task<bool> HandleGitHubWebhookAsync(string payload, string signature, string secret)
