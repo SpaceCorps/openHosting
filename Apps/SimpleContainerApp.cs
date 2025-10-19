@@ -78,7 +78,16 @@ public class SimpleContainerApp : ViewBase
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load container data");
-                errorMessage.Set($"Failed to load data: {ex.Message}");
+                
+                // Check if this is a Docker connection error
+                if (IsDockerConnectionError(ex))
+                {
+                    errorMessage.Set("Docker is not running or not accessible. Please ensure Docker Desktop is installed and running, then refresh the page.");
+                }
+                else
+                {
+                    errorMessage.Set($"Failed to load data: {ex.Message}");
+                }
             }
             finally
             {
@@ -89,10 +98,46 @@ public class SimpleContainerApp : ViewBase
         return Layout.Vertical().Gap(4).Padding(2)
             | Text.H1("OpenHosting - Container Manager")
             | (errorMessage.Value != null ?
-                Text.Block($"Error: {errorMessage.Value}") : null)
+                BuildErrorMessage(errorMessage.Value, refreshTrigger) : null)
             | (isLoading.Value ?
                 Text.Block("Loading containers...") :
                 BuildContainerList(containers.Value, refreshTrigger, containerAction));
+    }
+
+    private bool IsDockerConnectionError(Exception ex)
+    {
+        var message = ex.Message.ToLower();
+        return message.Contains("docker") && (
+            message.Contains("connection") ||
+            message.Contains("refused") ||
+            message.Contains("not found") ||
+            message.Contains("unable to connect") ||
+            message.Contains("named pipe") ||
+            message.Contains("npipe") ||
+            ex is System.Net.Http.HttpRequestException ||
+            ex is System.IO.IOException
+        );
+    }
+
+    private object BuildErrorMessage(string message, IState<int> refreshTrigger)
+    {
+        var isDockerError = message.Contains("Docker is not running");
+        
+        return new Card(
+            Layout.Vertical().Gap(3).Padding(3)
+            | Text.H3(isDockerError ? "🐳 Docker Not Available" : "⚠️ Error")
+            | Text.Block(message)
+            | (isDockerError ? 
+                Layout.Vertical().Gap(2)
+                | Text.H4("To get started:")
+                | Text.Block("1. Install Docker Desktop from https://www.docker.com/products/docker-desktop")
+                | Text.Block("2. Start Docker Desktop")
+                | Text.Block("3. Wait for Docker to fully start (you'll see the Docker icon in your system tray)")
+                | Text.Block("4. Click the Refresh button below")
+                | new Button("🔄 Refresh", () => refreshTrigger.Set(refreshTrigger.Value + 1)) :
+                new Button("🔄 Try Again", () => refreshTrigger.Set(refreshTrigger.Value + 1))
+            )
+        );
     }
 
     private object BuildContainerList(List<Container> containers, IState<int> refreshTrigger, IState<(string action, string containerId)?> containerAction)
